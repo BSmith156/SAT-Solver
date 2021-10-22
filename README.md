@@ -3,7 +3,7 @@ Command line program to determine satisfiability of k-clause sets.
 
 ## Setup
 ### 1. Clone Repo
-`git clone https://github.com/BSmith156/Image-to-ASCII.git`
+`git clone https://github.com/BSmith156/SAT-Solver.git`
 
 ### 2. Compile
 `g++ sat_solver.cpp -o sat_solver`
