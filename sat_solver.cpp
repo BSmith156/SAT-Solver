@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <vector>
 
 using namespace std;
@@ -39,11 +40,15 @@ int main(int argc, char** argv) {
     }
 
     // Check satisfiability
+    clock_t start = clock();
     if(dpll(clauses)) {
         printf("Satisfiable!\n");
     } else {
         printf("Unsatisfiable!\n");
     }
+    clock_t end = clock();
+    double time_spent = (double)(end - start) / CLOCKS_PER_SEC;
+    printf("CPU time taken: %.6lf\n", time_spent);
 
     return 0;
 }
@@ -114,7 +119,7 @@ bool dpll(vector<vector<int>> clauses) {
     }
 }
 
-// Unit propagation algorithm
+// Unit propagation algorithm, halts propagation and returns current clauses if clause set contains empty clause
 vector<vector<int>> unit_propagation(vector<vector<int>> clauses) {
     bool unsat = false;
     bool propagated;
