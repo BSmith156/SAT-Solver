@@ -11,7 +11,7 @@ bool verbose;
 
 void print_clauses(vector<unordered_set<int>>*);
 bool dpll(vector<unordered_set<int>>);
-vector<unordered_set<int>> unit_propagation(vector<unordered_set<int>>);
+void unit_propagation(vector<unordered_set<int>>*);
 
 int main(int argc, char** argv) {
     // Check arguments
@@ -84,7 +84,7 @@ void print_clauses(vector<unordered_set<int>>* clauses) {
 
 // DPLL algorithm
 bool dpll(vector<unordered_set<int>> clauses) {
-    clauses = unit_propagation(clauses);
+    unit_propagation(&clauses);
 
     if(clauses.size() == 0) {
         return true;
@@ -123,20 +123,20 @@ bool dpll(vector<unordered_set<int>> clauses) {
 }
 
 // Unit propagation algorithm, halts propagation and returns current clauses if clause set contains empty clause
-vector<unordered_set<int>> unit_propagation(vector<unordered_set<int>> clauses) {
+void unit_propagation(vector<unordered_set<int>>* clauses) {
     bool unsat = false;
     bool propagated;
     do {
         if(verbose) {
-            print_clauses(&clauses);
+            print_clauses(clauses);
         }
         if(unsat) {
-            return clauses;
+            return;
         }
         propagated = false;
-        for(int i = clauses.size() - 1; i >= 0; i--) {
-            if(clauses[i].size() == 1) {
-                int literal = *clauses[i].begin();
+        for(int i = clauses->size() - 1; i >= 0; i--) {
+            if((*clauses)[i].size() == 1) {
+                int literal = *(*clauses)[i].begin();
                 if(verbose) {
                     printf("Propagate ");
                     if(literal < 0) {
@@ -144,15 +144,15 @@ vector<unordered_set<int>> unit_propagation(vector<unordered_set<int>> clauses) 
                     }
                     printf("%d:\n", abs(literal));
                 }
-                for(int j = 0; j < clauses.size(); j++) {
-                    if(clauses[j].count(literal)) {
-                        clauses.erase(clauses.begin() + j--);
+                for(int j = 0; j < clauses->size(); j++) {
+                    if((*clauses)[j].count(literal)) {
+                        clauses->erase(clauses->begin() + j--);
                         continue;
-                    } else if (clauses[j].count(-literal)) {
-                        clauses[j].erase(-literal);
-                        if(clauses[j].size() == 0) {
+                    } else if ((*clauses)[j].count(-literal)) {
+                        (*clauses)[j].erase(-literal);
+                        if((*clauses)[j].size() == 0) {
                             if(!verbose) {
-                                return clauses;
+                                return;
                             }
                             unsat = true;
                         }
@@ -163,5 +163,4 @@ vector<unordered_set<int>> unit_propagation(vector<unordered_set<int>> clauses) 
             }
         }
     } while(propagated);
-    return clauses;
 }
