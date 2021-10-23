@@ -15,7 +15,7 @@ Uses the DPLL algorithm and takes k-clause sets in DIMACS format.
 ### Arguments
 | Argument | Description |
 | -------- | ----------- |
-| -v | Optional. Enable verbose mode. |
+| -v | Optional. Enable verbose mode, will slow down computation. |
 | clauses | Use numbers for literals, minus sign represents negation. 0 indicates the end of a clause. |
 
 ## Example

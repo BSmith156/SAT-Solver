@@ -3,19 +3,20 @@
 #include <string.h>
 #include <time.h>
 #include <vector>
+#include <unordered_set>
 
 using namespace std;
 
 bool verbose;
 
-void print_clauses(vector<vector<int>>*);
-bool dpll(vector<vector<int>>);
-vector<vector<int>> unit_propagation(vector<vector<int>>);
+void print_clauses(vector<unordered_set<int>>*);
+bool dpll(vector<unordered_set<int>>);
+vector<unordered_set<int>> unit_propagation(vector<unordered_set<int>>);
 
 int main(int argc, char** argv) {
     // Check arguments
     if(argc == 1 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
-        printf("Usage: ./sat_solver [-v] clauses...\n\nOptions:\n  -v  --verbose: enable verbose mode\n  -clauses:      use numbers for literals, minus sign represents negation\n                 0 indicates the end of a clause\n\nExample, (1 ∨ ¬2) ∧ (¬2 ∨ 3):\n  ./sat_solver 1 -2 0 -2 3 0\n");
+        printf("Usage: ./sat_solver [-v] clauses...\n\nOptions:\n  -v  --verbose: enable verbose mode, will slow down computation\n  -clauses:      use numbers for literals, minus sign represents negation\n                 0 indicates the end of a clause\n\nExample, (1 ∨ ¬2) ∧ (¬2 ∨ 3):\n  ./sat_solver 1 -2 0 -2 3 0\n");
         return -1;
     }
 
@@ -27,15 +28,15 @@ int main(int argc, char** argv) {
     }
 
     // Create vector of clauses from arguments
-    vector<vector<int>> clauses {vector<int>()};
+    vector<unordered_set<int>> clauses {unordered_set<int>()};
     for(int i = clause_begin; i < argc; i++) {
         int literal = atoi(argv[i]);
         if(literal == 0) {
             if(i != argc - 1) {
-                clauses.push_back(vector<int>());
+                clauses.push_back(unordered_set<int>());
             }
         } else {
-            clauses[clauses.size() - 1].push_back(literal);
+            clauses[clauses.size() - 1].insert(literal);
         }
     }
 
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
 }
 
 // Print clauses using mathematical notation
-void print_clauses(vector<vector<int>>* clauses) {
+void print_clauses(vector<unordered_set<int>>* clauses) {
     if(clauses->size() == 0) {
         printf("∅");
     }
@@ -63,14 +64,14 @@ void print_clauses(vector<vector<int>>* clauses) {
         if((*clauses)[i].size() == 0) {
             printf("□");
         } else {
-            for(int j = 0; j < (*clauses)[i].size(); j++) {
-                if((*clauses)[i][j] < 0) {
-                    printf("¬");
-                }
-                printf("%d", abs((*clauses)[i][j]));
-                if(j < (*clauses)[i].size() - 1) {
+            for(const auto& literal : (*clauses)[i]) {
+                if(literal != *(*clauses)[i].begin()) {
                     printf(" ∨ ");
                 }
+                if(literal < 0) {
+                    printf("¬");
+                }
+                printf("%d", abs(literal));
             }
         }
         printf(")");
@@ -82,7 +83,7 @@ void print_clauses(vector<vector<int>>* clauses) {
 }
 
 // DPLL algorithm
-bool dpll(vector<vector<int>> clauses) {
+bool dpll(vector<unordered_set<int>> clauses) {
     clauses = unit_propagation(clauses);
 
     if(clauses.size() == 0) {
@@ -94,14 +95,15 @@ bool dpll(vector<vector<int>> clauses) {
         }
     }
 
-    clauses.push_back(vector<int>());
-    clauses[clauses.size() - 1].push_back(clauses[0][0]);
+    clauses.push_back(unordered_set<int>());
+    int literal = *clauses[0].begin();
+    clauses[clauses.size() - 1].insert(literal);
     if(verbose) {
         printf("Add unit clause ");
-        if(clauses[0][0] < 0) {
+        if(literal < 0) {
             printf("¬");
-            printf("%d:\n", abs(clauses[0][0]));
         }
+        printf("%d:\n", abs(literal));
     }
     bool sat = dpll(clauses);
     if(sat) {
@@ -109,18 +111,19 @@ bool dpll(vector<vector<int>> clauses) {
     } else {
         if(verbose) {
             printf("Backtrack, add unit clause ");
-            if(clauses[0][0] > 0) {
+            if(literal > 0) {
                 printf("¬");
-                printf("%d:\n", abs(clauses[0][0]));
             }
+            printf("%d:\n", abs(literal));
         }
-        clauses[clauses.size() - 1][0] *= -1;
+        clauses[clauses.size() - 1].erase(literal);
+        clauses[clauses.size() - 1].insert(-literal);
         return dpll(clauses);
     }
 }
 
 // Unit propagation algorithm, halts propagation and returns current clauses if clause set contains empty clause
-vector<vector<int>> unit_propagation(vector<vector<int>> clauses) {
+vector<unordered_set<int>> unit_propagation(vector<unordered_set<int>> clauses) {
     bool unsat = false;
     bool propagated;
     do {
@@ -133,7 +136,7 @@ vector<vector<int>> unit_propagation(vector<vector<int>> clauses) {
         propagated = false;
         for(int i = clauses.size() - 1; i >= 0; i--) {
             if(clauses[i].size() == 1) {
-                int literal = clauses[i][0];
+                int literal = *clauses[i].begin();
                 if(verbose) {
                     printf("Propagate ");
                     if(literal < 0) {
@@ -142,18 +145,16 @@ vector<vector<int>> unit_propagation(vector<vector<int>> clauses) {
                     printf("%d:\n", abs(literal));
                 }
                 for(int j = 0; j < clauses.size(); j++) {
-                    for(int k = 0; k < clauses[j].size(); k++) {
-                        if(clauses[j][k] == literal) {
-                            clauses.erase(clauses.begin() + j--);
-                            break;
-                        } else if (clauses[j][k] == -literal) {
-                            clauses[j].erase(clauses[j].begin() + k--);
-                            if(clauses[j].size() == 0) {
-                                if(!verbose) {
-                                    return clauses;
-                                }
-                                unsat = true;
+                    if(clauses[j].count(literal)) {
+                        clauses.erase(clauses.begin() + j--);
+                        continue;
+                    } else if (clauses[j].count(-literal)) {
+                        clauses[j].erase(-literal);
+                        if(clauses[j].size() == 0) {
+                            if(!verbose) {
+                                return clauses;
                             }
+                            unsat = true;
                         }
                     }
                 }
