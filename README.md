@@ -1,6 +1,6 @@
 # SAT-Solver
 Command line program to determine satisfiability of k-clause sets.
-Uses the DPLL algorithm and takes k-clause sets in DIMACS format.
+Uses the DPLL algorithm, optimised with tautology elimination, and takes k-clause sets in DIMACS format.
 
 ## Setup
 ### 1. Clone Repo

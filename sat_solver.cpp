@@ -12,6 +12,7 @@ bool verbose;
 void print_clauses(vector<unordered_set<int>>*);
 bool dpll(vector<unordered_set<int>>);
 void unit_propagation(vector<unordered_set<int>>*);
+void tautology_elimination(vector<unordered_set<int>>*);
 
 int main(int argc, char** argv) {
     // Check arguments
@@ -42,6 +43,7 @@ int main(int argc, char** argv) {
 
     // Check satisfiability
     clock_t start = clock();
+    tautology_elimination(&clauses);
     if(dpll(clauses)) {
         printf("Satisfiable!\n");
     } else {
@@ -163,4 +165,25 @@ void unit_propagation(vector<unordered_set<int>>* clauses) {
             }
         }
     } while(propagated);
+}
+
+// Tautology elimination algorithm, returns true if tautology is removed
+void tautology_elimination(vector<unordered_set<int>>* clauses) {
+    bool removed = false;
+    for(int i = 0; i < clauses->size(); i++) {
+        for(const auto& literal : (*clauses)[i]) {
+            if((*clauses)[i].count(-literal)) {
+                clauses->erase(clauses->begin() + i--);
+                removed = true;
+                break;
+            }
+        } 
+    }
+    if(verbose) {
+        if(removed) {
+            printf("Removed tautologies.\n");
+        } else {
+            printf("No tautologies found.\n");
+        }
+    }
 }
